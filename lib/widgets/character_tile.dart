@@ -10,6 +10,7 @@ class CharacterTile extends StatelessWidget {
   final bool isPendingDeletion;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
+  final VoidCallback onAttack;
   final VoidCallback onDelete;
 
   const CharacterTile({
@@ -20,6 +21,7 @@ class CharacterTile extends StatelessWidget {
     required this.isPendingDeletion,
     required this.onTap,
     required this.onLongPress,
+    required this.onAttack,
     required this.onDelete,
   }) : super(key: key);
 
@@ -27,9 +29,10 @@ class CharacterTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: isActive ? 8 : 2,
-      color: isActive 
-        ? AppColors.primary.withValues(alpha: 0.2) 
-        : AppColors.cardBackground,
+      // Replace with your desired method of adjusting alpha if needed.
+      color: isActive
+          ? AppColors.primary.withValues(alpha: 0.2)
+          : AppColors.cardBackground,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
         onTap: onTap,
@@ -48,15 +51,35 @@ class CharacterTile extends StatelessWidget {
             color: AppColors.text,
           ),
         ),
-        subtitle: Text(
-          'Initiative: ${character.initiative}',
-          style: TextStyle(color: AppColors.text),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Initiative: ${character.initiative}',
+                style: TextStyle(color: AppColors.text)),
+            Text('HP: ${character.currentHp}/${character.maxHp}',
+                style: TextStyle(color: AppColors.text)),
+          ],
         ),
-        trailing: IconButton(
-          icon: isPendingDeletion
-              ? Icon(Icons.check, size: 30, color: Colors.redAccent)
-              : Icon(Icons.close, color: Colors.red),
-          onPressed: onDelete,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Sword (attack) icon.
+            IconButton(
+              icon: ImageIcon(
+                AssetImage('assets/icons/sword.png'),
+                color: Colors.orange,
+              ),
+              onPressed: onAttack,
+            ),
+            // Delete icon.
+            IconButton(
+              icon: isPendingDeletion
+                  ? Icon(Icons.check, size: 30, color: Colors.redAccent)
+                  : Icon(Icons.close, color: Colors.red),
+              onPressed: onDelete,
+            ),
+          ],
         ),
       ),
     );

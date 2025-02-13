@@ -12,11 +12,11 @@ class InitiativeTrackerScreen extends StatefulWidget {
 
 class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
   List<Character> characters = [
-    Character(name: "Alice", initiative: 15),
-    Character(name: "Bob", initiative: 12),
-    Character(name: "Charlie", initiative: 18),
-    Character(name: "Dragon", initiative: 10),
-    Character(name: "Roger", initiative: 9),
+    Character(name: "Alice", initiative: 15, currentHp: 15, maxHp: 15),
+    Character(name: "Bob", initiative: 12, currentHp: 12, maxHp: 12),
+    Character(name: "Charlie", initiative: 18, currentHp: 18, maxHp: 18),
+    Character(name: "Dragon", initiative: 10, currentHp: 40, maxHp: 40),
+    Character(name: "Roger", initiative: 9, currentHp: 9, maxHp: 9),
   ];
 
   int currentTurn = 0;
@@ -65,7 +65,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
         removeCharacter(character);
       } else {
         pendingDeletion.add(character);
-        // Remove the pending state after 3 seconds if no action is taken.
+        // Remove pending state after 3 seconds if no action is taken.
         Future.delayed(Duration(seconds: 3), () {
           setState(() {
             pendingDeletion.remove(character);
@@ -75,10 +75,13 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
     });
   }
 
-  void editCharacter(Character character, String newName, int newInitiative) {
+  void editCharacter(Character character, String newName, int newInitiative,
+      {required int newMaxHp, required int newCurrentHp}) {
     setState(() {
       character.name = newName;
       character.initiative = newInitiative;
+      character.maxHp = newMaxHp;
+      character.currentHp = newCurrentHp;
       characters.sort((a, b) => b.initiative.compareTo(a.initiative));
     });
   }
@@ -101,25 +104,41 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
         TextEditingController(text: character.name);
     final TextEditingController editInitiativeController =
         TextEditingController(text: character.initiative.toString());
+    final TextEditingController editMaxHpController =
+        TextEditingController(text: character.maxHp.toString());
+    final TextEditingController editCurrentHpController =
+        TextEditingController(text: character.currentHp.toString());
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: Text("Edit Character"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: editNameController,
-                decoration: InputDecoration(labelText: "Character Name"),
-              ),
-              TextField(
-                controller: editInitiativeController,
-                decoration: InputDecoration(labelText: "Initiative"),
-                keyboardType: TextInputType.number,
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: editNameController,
+                  decoration: InputDecoration(labelText: "Character Name"),
+                ),
+                TextField(
+                  controller: editInitiativeController,
+                  decoration: InputDecoration(labelText: "Initiative"),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: editMaxHpController,
+                  decoration: InputDecoration(labelText: "Max HP"),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: editCurrentHpController,
+                  decoration: InputDecoration(labelText: "Current HP"),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -131,13 +150,62 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                 final String newName = editNameController.text.trim();
                 final int? newInitiative =
                     int.tryParse(editInitiativeController.text.trim());
-                if (newName.isEmpty || newInitiative == null) {
+                final int? newMaxHp =
+                    int.tryParse(editMaxHpController.text.trim());
+                final int? newCurrentHp =
+                    int.tryParse(editCurrentHpController.text.trim());
+
+                if (newName.isEmpty ||
+                    newInitiative == null ||
+                    newMaxHp == null ||
+                    newCurrentHp == null) {
                   return;
                 }
-                editCharacter(character, newName, newInitiative);
+                editCharacter(character, newName, newInitiative,
+                    newMaxHp: newMaxHp, newCurrentHp: newCurrentHp);
                 Navigator.pop(context);
               },
               child: Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Private method to show a dialog for applying damage to a character.
+  void _showDamageDialog(Character character) {
+    final TextEditingController damageController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Apply Damage"),
+          content: TextField(
+            controller: damageController,
+            decoration: InputDecoration(hintText: "Enter damage amount"),
+            keyboardType: TextInputType.number,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Cancel damage input.
+              },
+              child: Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final int? damage = int.tryParse(damageController.text.trim());
+                if (damage == null || damage < 0) return;
+                setState(() {
+                  // Subtract damage, but not below 0.
+                  character.currentHp =
+                      (character.currentHp - damage) < 0 ? 0 : character.currentHp - damage;
+                });
+                Navigator.pop(context);
+              },
+              child: Text("Apply"),
             ),
           ],
         );
@@ -171,6 +239,9 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                   },
                   onLongPress: () {
                     _showEditDialog(character);
+                  },
+                  onAttack: () {
+                    _showDamageDialog(character);
                   },
                   onDelete: () {
                     togglePendingDeletion(character);
