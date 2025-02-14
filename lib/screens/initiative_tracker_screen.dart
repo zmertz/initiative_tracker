@@ -1,55 +1,47 @@
 // lib/screens/initiative_tracker_screen.dart
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import '../models/character.dart';
 import '../widgets/character_tile.dart';
 import '../widgets/add_character_form.dart';
+import '../widgets/my_app_bar.dart';
 
 class InitiativeTrackerScreen extends StatefulWidget {
+  final Function(bool)? onThemeChanged;
+  final bool? isDarkTheme;
+
+  const InitiativeTrackerScreen({
+    Key? key,
+    this.onThemeChanged,
+    this.isDarkTheme,
+  }) : super(key: key);
+
   @override
   _InitiativeTrackerScreenState createState() =>
       _InitiativeTrackerScreenState();
 }
 
 class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
-  List<Character> characters = [];
+  List<Character> characters = [
+    Character(name: "Alice", initiative: 15, currentHp: 15, maxHp: 15),
+    Character(name: "Bob", initiative: 12, currentHp: 12, maxHp: 12),
+    Character(name: "Charlie", initiative: 18, currentHp: 18, maxHp: 18),
+    Character(name: "Dragon", initiative: 10, currentHp: 40, maxHp: 40),
+    Character(name: "Roger", initiative: 9, currentHp: 9, maxHp: 9),
+  ];
+
   int currentTurn = 0;
   Set<Character> pendingDeletion = {};
-
-  // Convenience getter for the Hive box.
-  Box<Character> get characterBox => Hive.box<Character>('characters');
 
   @override
   void initState() {
     super.initState();
-    // Load saved characters if available; otherwise use defaults.
-    if (characterBox.isNotEmpty) {
-      characters = characterBox.values.toList();
-    } else {
-      characters = [
-        Character(name: "Stellar", initiative: 15, currentHp: 15, maxHp: 15),
-        Character(name: "Keely", initiative: 12, currentHp: 12, maxHp: 12),
-        Character(name: "Arcana", initiative: 18, currentHp: 18, maxHp: 18),
-      ];
-      _saveCharacters();
-    }
     characters.sort((a, b) => b.initiative.compareTo(a.initiative));
-  }
-
-  /// Save the current list of characters to Hive.
-  void _saveCharacters() {
-    final box = characterBox;
-    box.clear();
-    for (var character in characters) {
-      box.add(character);
-    }
   }
 
   void addCharacter(Character newCharacter) {
     setState(() {
       characters.add(newCharacter);
       characters.sort((a, b) => b.initiative.compareTo(a.initiative));
-      _saveCharacters();
     });
   }
 
@@ -67,7 +59,6 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
           currentTurn = 0;
         }
       }
-      _saveCharacters();
     });
   }
 
@@ -100,7 +91,6 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
       character.maxHp = newMaxHp;
       character.currentHp = newCurrentHp;
       characters.sort((a, b) => b.initiative.compareTo(a.initiative));
-      _saveCharacters();
     });
   }
 
@@ -116,7 +106,6 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
     });
   }
 
-  /// Private method to show the edit dialog for a character.
   void _showEditDialog(Character character) {
     final TextEditingController editNameController =
         TextEditingController(text: character.name);
@@ -191,7 +180,6 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
     );
   }
 
-  /// Private method to show a dialog for applying damage.
   void _showDamageDialog(Character character) {
     final TextEditingController damageController = TextEditingController();
 
@@ -218,9 +206,9 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                     int.tryParse(damageController.text.trim());
                 if (damage == null || damage < 0) return;
                 setState(() {
-                  character.currentHp =
-                      (character.currentHp - damage) < 0 ? 0 : character.currentHp - damage;
-                  _saveCharacters();
+                  character.currentHp = (character.currentHp - damage) < 0
+                      ? 0
+                      : character.currentHp - damage;
                 });
                 Navigator.pop(context);
               },
@@ -235,8 +223,10 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("DnD Initiative Tracker"),
+      appBar: MyAppBar(
+        title: "DnD Initiative Tracker",
+        onThemeChanged: widget.onThemeChanged,
+        isDarkTheme: widget.isDarkTheme,
       ),
       body: Column(
         children: [

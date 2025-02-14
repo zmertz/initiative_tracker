@@ -78,39 +78,43 @@ class _AddCharacterFormState extends State<AddCharacterForm> {
           SizedBox(height: 8),
           Row(
             children: [
-              // Initiative input with a fixed width.
-              Container(
-                width: 80,
-                child: TextField(
-                  controller: initiativeController,
-                  decoration: InputDecoration(
-                    hintText: 'Init',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
+              Expanded( // This centers the initiative and HP fields
+                child: Row(
+                  //mainAxisAlignment: MainAxisAlignment.center, // Center these inputs
+                  children: [
+                    Container(
+                      width: 80,
+                      child: TextField(
+                        controller: initiativeController,
+                        decoration: InputDecoration(
+                          hintText: 'Init',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Container(
+                      width: 80,
+                      child: TextField(
+                        controller: hpController,
+                        decoration: InputDecoration(
+                          hintText: 'HP',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(width: 8),
-              // HP input with a fixed width similar to initiative.
-              Container(
-                width: 80,
-                child: TextField(
-                  controller: hpController,
-                  decoration: InputDecoration(
-                    hintText: 'HP',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-              SizedBox(width: 8),
-              // Checkmark icon to confirm adding the character.
               IconButton(
                 icon: Icon(Icons.check, color: Colors.green, size: 32),
                 onPressed: addCharacter,
               ),
             ],
           ),
+
         ],
       ),
     );
