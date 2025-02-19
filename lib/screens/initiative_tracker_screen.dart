@@ -1,9 +1,12 @@
-// lib/screens/initiative_tracker_screen.dart
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import '../models/character.dart';
 import '../widgets/character_tile.dart';
 import '../widgets/add_character_form.dart';
 import '../widgets/my_app_bar.dart';
+import '../widgets/shake_widget.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class InitiativeTrackerScreen extends StatefulWidget {
   final Function(bool)? onThemeChanged;
@@ -32,16 +35,41 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
   int currentTurn = 0;
   Set<Character> pendingDeletion = {};
 
+  // List of GlobalKeys for each ShakeWidget wrapping a CharacterTile.
+  late List<GlobalKey<ShakeWidgetState>> _shakeKeys;
+
   @override
   void initState() {
     super.initState();
-    characters.sort((a, b) => b.initiative.compareTo(a.initiative));
+    final box = Hive.box('encounterBox');
+    final savedCharacters = box.get('characters') as List? ?? [];
+    final savedTurn = box.get('currentTurn', defaultValue: 0) as int;
+
+    if (savedCharacters.isNotEmpty) {
+      characters = savedCharacters.cast<Character>();
+      currentTurn = savedTurn;
+    } else {
+      characters.sort((a, b) => b.initiative.compareTo(a.initiative));
+    }
+
+    _shakeKeys = List.generate(characters.length, (index) => GlobalKey<ShakeWidgetState>());
   }
+
+
+  void _saveEncounterState() {
+    final box = Hive.box('encounterBox');
+    box.put('characters', characters);
+    box.put('currentTurn', currentTurn);
+  }
+
 
   void addCharacter(Character newCharacter) {
     setState(() {
       characters.add(newCharacter);
       characters.sort((a, b) => b.initiative.compareTo(a.initiative));
+      // Regenerate keys when the character list changes
+      _shakeKeys = List.generate(characters.length, (index) => GlobalKey<ShakeWidgetState>());
+      _saveEncounterState();
     });
   }
 
@@ -59,12 +87,8 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
           currentTurn = 0;
         }
       }
-    });
-  }
-
-  void setActiveCharacter(int index) {
-    setState(() {
-      currentTurn = index;
+      _shakeKeys = List.generate(characters.length, (index) => GlobalKey<ShakeWidgetState>());
+      _saveEncounterState();
     });
   }
 
@@ -83,26 +107,37 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
     });
   }
 
-  void editCharacter(Character character, String newName, int newInitiative,
-      {required int newMaxHp, required int newCurrentHp}) {
+  void editCharacter(Character character, 
+    {String? newName, int? newInitiative, int? newMaxHp, required int newCurrentHp}) {
     setState(() {
-      character.name = newName;
-      character.initiative = newInitiative;
-      character.maxHp = newMaxHp;
+      character.name = newName ?? character.name;
+      character.initiative = newInitiative ?? character.initiative;
+      character.maxHp = newMaxHp ?? character.maxHp;
       character.currentHp = newCurrentHp;
       characters.sort((a, b) => b.initiative.compareTo(a.initiative));
+      _saveEncounterState();
+    });
+  }
+
+
+  void setActiveCharacter(int index) {
+    setState(() {
+      currentTurn = index;
+      _saveEncounterState();
     });
   }
 
   void nextTurn() {
     setState(() {
-      currentTurn = (currentTurn + 1) % characters.length;
+      int index = (currentTurn + 1) % characters.length;
+      setActiveCharacter(index);
     });
   }
 
   void previousTurn() {
     setState(() {
-      currentTurn = (currentTurn - 1 + characters.length) % characters.length;
+      int index = (currentTurn - 1 + characters.length) % characters.length;
+      setActiveCharacter(index);
     });
   }
 
@@ -168,7 +203,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                     newCurrentHp == null) {
                   return;
                 }
-                editCharacter(character, newName, newInitiative,
+                editCharacter(character, newName: newName, newInitiative: newInitiative,
                     newMaxHp: newMaxHp, newCurrentHp: newCurrentHp);
                 Navigator.pop(context);
               },
@@ -181,40 +216,64 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
   }
 
   void _showDamageDialog(Character character) {
-    final TextEditingController damageController = TextEditingController();
+    int selectedDamage = 0;
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text("Apply Damage"),
-          content: TextField(
-            controller: damageController,
-            decoration: InputDecoration(hintText: "Enter damage amount"),
-            keyboardType: TextInputType.number,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final int? damage =
-                    int.tryParse(damageController.text.trim());
-                if (damage == null || damage < 0) return;
-                setState(() {
-                  character.currentHp = (character.currentHp - damage) < 0
-                      ? 0
-                      : character.currentHp - damage;
-                });
-                Navigator.pop(context);
-              },
-              child: Text("Apply"),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text("Apply Damage"),
+              content: SizedBox(
+                height: 150,
+                child: CupertinoPicker(
+                  scrollController: FixedExtentScrollController(initialItem: selectedDamage),
+                  itemExtent: 40,
+                  onSelectedItemChanged: (int value) {
+                    selectedDamage = value;
+                  },
+                  children: List.generate(
+                    100,
+                    (index) => Center(
+                      child: Text(
+                        "$index",
+                        style: TextStyle(fontSize: 24),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (selectedDamage == 0) {
+                      Navigator.pop(context);
+                      return;
+                    }
+                    setState(() {
+                      int newHp = (character.currentHp - selectedDamage) < 0 ? 0 : character.currentHp - selectedDamage;
+                      editCharacter(character, newCurrentHp: newHp);
+                     // _saveEncounterState();
+                    });
+                    Navigator.pop(context);
+                    // Trigger shake on the affected tile:
+                    int index = characters.indexOf(character);
+                    if (index != -1 && index < _shakeKeys.length) {
+                      _shakeKeys[index].currentState?.shake();
+                    }
+                  },
+                  child: Text("Apply"),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -237,23 +296,26 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                 final character = characters[index];
                 bool isActive = index == currentTurn;
                 bool isPendingDeletion = pendingDeletion.contains(character);
-                return CharacterTile(
-                  character: character,
-                  index: index,
-                  isActive: isActive,
-                  isPendingDeletion: isPendingDeletion,
-                  onTap: () {
-                    setActiveCharacter(index);
-                  },
-                  onLongPress: () {
-                    _showEditDialog(character);
-                  },
-                  onAttack: () {
-                    _showDamageDialog(character);
-                  },
-                  onDelete: () {
-                    togglePendingDeletion(character);
-                  },
+                return ShakeWidget(
+                  key: _shakeKeys[index],
+                  child: CharacterTile(
+                    character: character,
+                    index: index,
+                    isActive: isActive,
+                    isPendingDeletion: isPendingDeletion,
+                    onTap: () {
+                      setActiveCharacter(index);
+                    },
+                    onLongPress: () {
+                      _showEditDialog(character);
+                    },
+                    onAttack: () {
+                      _showDamageDialog(character);
+                    },
+                    onDelete: () {
+                      togglePendingDeletion(character);
+                    },
+                  ),
                 );
               },
             ),
