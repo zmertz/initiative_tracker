@@ -11,6 +11,7 @@ void main() async {
   Hive.registerAdapter(CharacterAdapter());
   await Hive.openBox<Character>('characters');
   await Hive.openBox('settings'); // For storing user settings like theme
+  await Hive.openBox('encounterBox'); // For storing encounter data
 
   runApp(MyApp());
 }
