@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import '../models/character.dart';
 import '../widgets/character_tile.dart';
