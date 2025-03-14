@@ -63,6 +63,17 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
 
 
   void addCharacter(Character newCharacter) {
+    const int characterMax = 20;
+
+    if (characters.length >= characterMax) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("New character exceeds max of $characterMax"),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
     setState(() {
       characters.add(newCharacter);
       characters.sort((a, b) => b.initiative.compareTo(a.initiative));

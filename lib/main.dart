@@ -31,20 +31,22 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     // Default to light theme (false) if no setting exists.
     _isDark = settingsBox.get('isDarkTheme', defaultValue: false);
-    themeNotifier =
-        ValueNotifier(_isDark ? AppTheme.darkTheme : AppTheme.lightTheme);
+    themeNotifier =  ValueNotifier(ThemeData.light());
+        //ValueNotifier(_isDark ? AppTheme.darkTheme(context) : AppTheme.lightTheme(context));
   }
 
   void updateTheme(bool isDark) {
     setState(() {
       _isDark = isDark;
       settingsBox.put('isDarkTheme', isDark);
-      themeNotifier.value = isDark ? AppTheme.darkTheme : AppTheme.lightTheme;
+      themeNotifier.value = isDark ? AppTheme.darkTheme(context) : AppTheme.lightTheme(context);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    themeNotifier.value = _isDark ? AppTheme.darkTheme(context) : AppTheme.lightTheme(context);
+
     return ValueListenableBuilder<ThemeData>(
       valueListenable: themeNotifier,
       builder: (context, currentTheme, _) {
