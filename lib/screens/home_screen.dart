@@ -62,9 +62,9 @@ class HomeScreen extends StatelessWidget {
       right: 0,
       child: Center(
         child: Text(
-          "DnD Pal",
+          "D&D Pal",
           style: TextStyle(
-            fontFamily: 'Sofia', // Custom font
+            fontFamily: 'AlmendraSC',
             fontSize: 48,
             color: Colors.white,
             shadows: [
@@ -172,7 +172,7 @@ class _GlintButtonState extends State<_GlintButton> with SingleTickerProviderSta
             child: Text(
               "Initiative Tracker",
               style: TextStyle(
-                fontFamily: 'Sofia',
+                fontFamily: 'AlmendraSC',
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.onPrimary,

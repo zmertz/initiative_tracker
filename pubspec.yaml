@@ -32,7 +32,7 @@ dependencies:
     sdk: flutter
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  google_fonts: ^6.1.0
+  google_fonts: ^6.2.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -69,6 +69,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/icons/heal.png
     - assets/icons/sword.png
     - assets/images/castle_background.png
   
@@ -76,6 +77,9 @@ flutter:
     - family: Sofia
       fonts:
         - asset: assets/fonts/Sofia-Regular.ttf
+    - family: AlmendraSC
+      fonts:
+        - asset: assets/fonts/AlmendraSC-Regular.ttf
 
 
   # To add assets to your application, add an assets section, like this:
