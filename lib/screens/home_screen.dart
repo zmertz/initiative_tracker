@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'initiative_tracker_screen.dart';
 import '../widgets/my_app_bar.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatelessWidget {
   final Function(bool) onThemeChanged;
@@ -62,18 +63,19 @@ class HomeScreen extends StatelessWidget {
       right: 0,
       child: Center(
         child: Text(
-          "DnD Pal",
-          style: TextStyle(
-            fontFamily: 'Sofia', // Custom font
-            fontSize: 48,
-            color: Colors.white,
-            shadows: [
-              Shadow(
-                blurRadius: 4.0,
-                color: Colors.black54,
-                offset: Offset(2.0, 2.0),
-              ),
-            ],
+          "D&D Pal",
+          style: GoogleFonts.almendraSc(
+            textStyle: TextStyle(
+              fontSize: 48,
+              color: Colors.white,
+              shadows: [
+                Shadow(
+                  blurRadius: 4.0,
+                  color: Colors.black54,
+                  offset: Offset(2.0, 2.0),
+                )
+              ]
+            ),
           ),
         ),
       ),
@@ -171,12 +173,13 @@ class _GlintButtonState extends State<_GlintButton> with SingleTickerProviderSta
             ),
             child: Text(
               "Initiative Tracker",
-              style: TextStyle(
-                fontFamily: 'Sofia',
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onPrimary,
-                letterSpacing: 1.2,
+              style: GoogleFonts.almendraSc(
+                textStyle: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  letterSpacing: 1.2,
+                ),
               ),
             ),
           ),

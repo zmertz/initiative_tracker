@@ -4,7 +4,7 @@ import '../models/character.dart';
 import '../widgets/character_tile.dart';
 import '../widgets/add_character_form.dart';
 import '../widgets/my_app_bar.dart';
-import '../widgets/shake_widget.dart';
+import '../widgets/status_widget.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class InitiativeTrackerScreen extends StatefulWidget {
@@ -24,18 +24,16 @@ class InitiativeTrackerScreen extends StatefulWidget {
 
 class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
   List<Character> characters = [
-    Character(name: "Alice", initiative: 15, currentHp: 15, maxHp: 15),
-    Character(name: "Bob", initiative: 12, currentHp: 12, maxHp: 12),
-    Character(name: "Charlie", initiative: 18, currentHp: 18, maxHp: 18),
-    Character(name: "Dragon", initiative: 10, currentHp: 40, maxHp: 40),
-    Character(name: "Roger", initiative: 9, currentHp: 9, maxHp: 9),
+    Character(name: "Goblin", initiative: 5, currentHp: 7, maxHp: 7),
+    Character(name: "Bugbear", initiative: 15, currentHp: 27, maxHp: 27),
+    Character(name: "Wolf", initiative: 12, currentHp: 11, maxHp: 11),
   ];
 
   int currentTurn = 0;
   Set<Character> pendingDeletion = {};
 
-  // List of GlobalKeys for each ShakeWidget wrapping a CharacterTile.
-  late List<GlobalKey<ShakeWidgetState>> _shakeKeys;
+  // List of GlobalKeys for each StatusWidget wrapping a CharacterTile.
+  late List<GlobalKey<StatusWidgetState>> _statusKeys;
 
   @override
   void initState() {
@@ -51,7 +49,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
       characters.sort((a, b) => b.initiative.compareTo(a.initiative));
     }
 
-    _shakeKeys = List.generate(characters.length, (index) => GlobalKey<ShakeWidgetState>());
+    _statusKeys = List.generate(characters.length, (index) => GlobalKey<StatusWidgetState>());
   }
 
 
@@ -78,7 +76,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
       characters.add(newCharacter);
       characters.sort((a, b) => b.initiative.compareTo(a.initiative));
       // Regenerate keys when the character list changes
-      _shakeKeys = List.generate(characters.length, (index) => GlobalKey<ShakeWidgetState>());
+      _statusKeys = List.generate(characters.length, (index) => GlobalKey<StatusWidgetState>());
       _saveEncounterState();
     });
   }
@@ -97,7 +95,7 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
           currentTurn = 0;
         }
       }
-      _shakeKeys = List.generate(characters.length, (index) => GlobalKey<ShakeWidgetState>());
+      _statusKeys = List.generate(characters.length, (index) => GlobalKey<StatusWidgetState>());
       _saveEncounterState();
     });
   }
@@ -275,19 +273,19 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                         newHp = (character.currentHp - changeAmount) < 0 ? 0 : character.currentHp - changeAmount;
                       }
                       editCharacter(character, newCurrentHp: newHp);
-                     // _saveEncounterState();
                     });
                     Navigator.pop(context);
-                    // Trigger shake on the affected tile:
+                    // Trigger glow on the affected tile:
                     if (changeType == "heal") {
                       int index = characters.indexOf(character);
-                      if (index != -1 && index < _shakeKeys.length) {
-                        //_shakeKeys[index].currentState?.glow();
-                      }                    
+                      if (index != -1 && index < _statusKeys.length) {
+                        _statusKeys[index].currentState?.glow();
+                      }
+                    // Trigger shake on the affected tile:                
                     } else if (changeType == "damage") {
                       int index = characters.indexOf(character);
-                      if (index != -1 && index < _shakeKeys.length) {
-                        _shakeKeys[index].currentState?.shake();
+                      if (index != -1 && index < _statusKeys.length) {
+                        _statusKeys[index].currentState?.shake();
                       }
                     }
                   },
@@ -326,8 +324,8 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                 final character = characters[index];
                 bool isActive = index == currentTurn;
                 bool isPendingDeletion = pendingDeletion.contains(character);
-                return ShakeWidget(
-                  key: _shakeKeys[index],
+                return StatusWidget(
+                  key: _statusKeys[index],
                   child: CharacterTile(
                     character: character,
                     index: index,
