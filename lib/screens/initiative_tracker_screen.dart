@@ -225,8 +225,8 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
     );
   }
 
-  void _showDamageDialog(Character character) {
-    int selectedDamage = 0;
+  void _performHpChange(Character character, String changeType) {
+    int changeAmount = 0;
 
     showDialog(
       context: context,
@@ -234,14 +234,14 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text("Apply Damage"),
+              title: (changeType == "heal") ? Text("Apply Heal") : Text("Apply Damage"),
               content: SizedBox(
                 height: 150,
                 child: CupertinoPicker(
-                  scrollController: FixedExtentScrollController(initialItem: selectedDamage),
+                  scrollController: FixedExtentScrollController(initialItem: changeAmount),
                   itemExtent: 40,
                   onSelectedItemChanged: (int value) {
-                    selectedDamage = value;
+                    changeAmount = value;
                   },
                   children: List.generate(
                     100,
@@ -263,20 +263,32 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    if (selectedDamage == 0) {
+                    if (changeAmount == 0) {
                       Navigator.pop(context);
                       return;
                     }
                     setState(() {
-                      int newHp = (character.currentHp - selectedDamage) < 0 ? 0 : character.currentHp - selectedDamage;
+                      int newHp = character.currentHp;
+                      if (changeType == "heal") {
+                        newHp = (character.currentHp + changeAmount) > character.maxHp ? character.maxHp : character.currentHp + changeAmount;
+                      } else if (changeType == "damage") {
+                        newHp = (character.currentHp - changeAmount) < 0 ? 0 : character.currentHp - changeAmount;
+                      }
                       editCharacter(character, newCurrentHp: newHp);
                      // _saveEncounterState();
                     });
                     Navigator.pop(context);
                     // Trigger shake on the affected tile:
-                    int index = characters.indexOf(character);
-                    if (index != -1 && index < _shakeKeys.length) {
-                      _shakeKeys[index].currentState?.shake();
+                    if (changeType == "heal") {
+                      int index = characters.indexOf(character);
+                      if (index != -1 && index < _shakeKeys.length) {
+                        //_shakeKeys[index].currentState?.glow();
+                      }                    
+                    } else if (changeType == "damage") {
+                      int index = characters.indexOf(character);
+                      if (index != -1 && index < _shakeKeys.length) {
+                        _shakeKeys[index].currentState?.shake();
+                      }
                     }
                   },
                   child: Text("Apply"),
@@ -287,6 +299,14 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
         );
       },
     );
+  }
+
+  void _showHealDialog(Character character) {
+    _performHpChange(character, "heal");
+  }
+
+  void _showDamageDialog(Character character) {
+    _performHpChange(character, "damage");
   }
 
   @override
@@ -318,6 +338,9 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
                     },
                     onLongPress: () {
                       _showEditDialog(character);
+                    },
+                    onHeal: () {
+                      _showHealDialog(character);
                     },
                     onAttack: () {
                       _showDamageDialog(character);

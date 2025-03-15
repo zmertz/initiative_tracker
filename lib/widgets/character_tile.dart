@@ -8,6 +8,7 @@ class CharacterTile extends StatelessWidget {
   final bool isPendingDeletion;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
+  final VoidCallback onHeal;
   final VoidCallback onAttack;
   final VoidCallback onDelete;
 
@@ -19,6 +20,7 @@ class CharacterTile extends StatelessWidget {
     required this.isPendingDeletion,
     required this.onTap,
     required this.onLongPress,
+    required this.onHeal,
     required this.onAttack,
     required this.onDelete,
   }) : super(key: key);
@@ -87,6 +89,10 @@ class CharacterTile extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        IconButton(
+          icon: ImageIcon(AssetImage('assets/icons/heal.png'), color: Colors.green),
+          onPressed: onHeal,
+        ),
         IconButton(
           icon: ImageIcon(AssetImage('assets/icons/sword.png'), color: Colors.orange),
           onPressed: onAttack,

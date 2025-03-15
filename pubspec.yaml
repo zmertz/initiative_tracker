@@ -69,6 +69,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/icons/heal.png
     - assets/icons/sword.png
     - assets/images/castle_background.png
   
