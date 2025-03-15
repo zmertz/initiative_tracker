@@ -73,6 +73,13 @@ flutter:
     - assets/icons/sword.png
     - assets/images/castle_background.png
   
+  fonts:
+    - family: Sofia
+      fonts:
+        - asset: assets/fonts/Sofia-Regular.ttf
+    - family: AlmendraSC
+      fonts:
+        - asset: assets/fonts/AlmendraSC-Regular.ttf
 
 
   # To add assets to your application, add an assets section, like this:
