@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../models/character.dart';
 import '../widgets/character_tile.dart';
+import '../widgets/edit_character_form.dart';
 import '../widgets/add_character_form.dart';
 import '../widgets/my_app_bar.dart';
 import '../widgets/status_widget.dart';
@@ -116,12 +117,14 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
   }
 
   void editCharacter(Character character, 
-    {String? newName, int? newInitiative, int? newMaxHp, required int newCurrentHp}) {
+      {String? newName, int? newInitiative, int? newMaxHp, required int newCurrentHp, int? newArmorClass, List<String>? newActions}) {
     setState(() {
       character.name = newName ?? character.name;
       character.initiative = newInitiative ?? character.initiative;
       character.maxHp = newMaxHp ?? character.maxHp;
       character.currentHp = newCurrentHp;
+      character.armorClass = newArmorClass ?? character.armorClass;
+      character.actions = newActions ?? character.actions;
       characters.sort((a, b) => b.initiative.compareTo(a.initiative));
       _saveEncounterState();
     });
@@ -150,78 +153,33 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
   }
 
   void _showEditDialog(Character character) {
-    final TextEditingController editNameController =
-        TextEditingController(text: character.name);
-    final TextEditingController editInitiativeController =
-        TextEditingController(text: character.initiative.toString());
-    final TextEditingController editMaxHpController =
-        TextEditingController(text: character.maxHp.toString());
-    final TextEditingController editCurrentHpController =
-        TextEditingController(text: character.currentHp.toString());
-
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("Edit Character"),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: editNameController,
-                  decoration: InputDecoration(labelText: "Character Name"),
-                ),
-                TextField(
-                  controller: editInitiativeController,
-                  decoration: InputDecoration(labelText: "Initiative"),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: editMaxHpController,
-                  decoration: InputDecoration(labelText: "Max HP"),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: editCurrentHpController,
-                  decoration: InputDecoration(labelText: "Current HP"),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
-            ),
+          contentPadding: EdgeInsets.all(16.0),
+          content: EditCharacterForm(
+            character: character,
+            onSave: (updatedCharacter) {
+              editCharacter(character, 
+                newName: updatedCharacter.name, 
+                newInitiative: updatedCharacter.initiative, 
+                newMaxHp: updatedCharacter.maxHp, 
+                newCurrentHp: updatedCharacter.currentHp,
+                newArmorClass: updatedCharacter.armorClass,
+                newActions: updatedCharacter.actions
+              );
+              Navigator.pop(context); // Close the dialog after saving
+            },
+            onCancel: () {
+              Navigator.pop(context); // Close the dialog on cancel
+            },
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final String newName = editNameController.text.trim();
-                final int? newInitiative =
-                    int.tryParse(editInitiativeController.text.trim());
-                final int? newMaxHp =
-                    int.tryParse(editMaxHpController.text.trim());
-                final int? newCurrentHp =
-                    int.tryParse(editCurrentHpController.text.trim());
-
-                if (newName.isEmpty ||
-                    newInitiative == null ||
-                    newMaxHp == null ||
-                    newCurrentHp == null) {
-                  return;
-                }
-                editCharacter(character, newName: newName, newInitiative: newInitiative,
-                    newMaxHp: newMaxHp, newCurrentHp: newCurrentHp);
-                Navigator.pop(context);
-              },
-              child: Text("Save"),
-            ),
-          ],
         );
       },
     );
   }
+
 
   void _performHpChange(Character character, String changeType) {
     int changeAmount = 0;
@@ -307,6 +265,26 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
     _performHpChange(character, "damage");
   }
 
+ void _showAddCharacterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          contentPadding: EdgeInsets.all(16.0),
+          content: AddCharacterForm(
+            onAdd: (newCharacter) {
+              addCharacter(newCharacter);
+              Navigator.pop(context); // Close the dialog after adding
+            },
+            onCancel: () {
+              Navigator.pop(context); // Close the dialog on cancel
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -351,29 +329,14 @@ class _InitiativeTrackerScreenState extends State<InitiativeTrackerScreen> {
               },
             ),
           ),
-          AddCharacterForm(
-            onAdd: addCharacter,
-          ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(
-                  icon: Icon(Icons.arrow_back),
-                  tooltip: "Previous Turn",
-                  onPressed: previousTurn,
-                ),
-                SizedBox(width: 16),
                 ElevatedButton(
-                  onPressed: nextTurn,
-                  child: Text("Next Turn"),
-                ),
-                SizedBox(width: 16),
-                IconButton(
-                  icon: Icon(Icons.arrow_forward),
-                  tooltip: "Next Turn",
-                  onPressed: nextTurn,
+                  onPressed: () => _showAddCharacterDialog(context),
+                  child: Text("Add Character"),
                 ),
               ],
             ),
