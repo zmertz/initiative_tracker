@@ -17,10 +17,18 @@ class Character {
   @HiveField(3)
   int maxHp;
 
+  @HiveField(4)
+  int? armorClass; // Optional field for armor class
+
+  @HiveField(5)
+  List<String>? actions; // Optional list of actions
+
   Character({
     required this.name,
     required this.initiative,
     required this.currentHp,
     required this.maxHp,
+    this.armorClass,
+    this.actions,
   });
 }
