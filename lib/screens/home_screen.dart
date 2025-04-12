@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'initiative_tracker_screen.dart';
+import 'character_template_screen.dart';
 import '../widgets/my_app_bar.dart';
+import 'dart:math';
 
 class HomeScreen extends StatelessWidget {
   final Function(bool) onThemeChanged;
@@ -44,12 +46,49 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+// Custom page transition for CharacterTemplateScreen
+  Route _createTemplateRoute() {
+  return PageRouteBuilder(
+    transitionDuration: Duration(milliseconds: 500),
+    pageBuilder: (context, animation, secondaryAnimation) =>
+        CharacterTemplateScreen(
+          onThemeChanged: onThemeChanged,
+          isDarkTheme: isDarkTheme,
+        ),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final slideTween = Tween<Offset>(
+        begin: Offset(1.0, 0.0), // Slide in from the right
+        end: Offset.zero,
+      ).chain(CurveTween(curve: Curves.easeInOut));
+
+      final fadeTween = Tween<double>(
+        begin: 0.0,
+        end: 1.0,
+      ).chain(CurveTween(curve: Curves.easeInOut));
+
+      return SlideTransition(
+        position: animation.drive(slideTween),
+        child: FadeTransition(
+          opacity: animation.drive(fadeTween),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+
   // Background image
-  Widget _buildBackground() {
+  Widget _buildBackground(BuildContext context) {
     return Positioned.fill(
       child: Image.asset(
-        'assets/images/castle_background.png',
+        //'assets/images/castle_background.png',
+        //'assets/images/dragon-castle-simple.jpg',
+        'assets/images/dragon-castle.jpg',
+        //'assets/images/dragon-castle-realistic.jpg',
         fit: BoxFit.cover,
+        width: MediaQuery.of(context).size.width, // Adjust width based on screen size
+        height: MediaQuery.of(context).size.height,
       ),
     );
   }
@@ -82,10 +121,23 @@ class HomeScreen extends StatelessWidget {
 
   // Builds the tracker button with animation
   Widget _buildTrackerButtonWithGlint(BuildContext context) {
-    return _GlintButton(onPressed: () {
-      Navigator.push(context, _createTrackerRoute());
-    });
+    return _GlintButton(
+      onPressed: () {
+        Navigator.push(context, _createTrackerRoute());
+      },
+      label: "Initiative Tracker"
+    );
   }
+
+  Widget _buildCharacterTemplateButton(BuildContext context) {
+    return _GlintButton(
+      onPressed: () {
+        Navigator.push(context, _createTemplateRoute());
+      },
+      label: "Character Templates",
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -97,9 +149,25 @@ class HomeScreen extends StatelessWidget {
       ),
       body: Stack(
         children: [
-          _buildBackground(),
+          _buildBackground(context),
           _buildTitle(),
-          Center(child: _buildTrackerButtonWithGlint(context)),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FractionallySizedBox(
+                  widthFactor: 0.8, // 80% of the screen width
+                  child: _buildTrackerButtonWithGlint(context),
+                ),
+                const SizedBox(height: 20),
+                FractionallySizedBox(
+                  widthFactor: 0.8,
+                  child: _buildCharacterTemplateButton(context),
+                ),
+              ],
+            ),
+          ),
+
         ],
       ),
     );
@@ -111,7 +179,8 @@ class HomeScreen extends StatelessWidget {
 // ==========================
 class _GlintButton extends StatefulWidget {
   final VoidCallback onPressed;
-  const _GlintButton({Key? key, required this.onPressed}) : super(key: key);
+  final String label;
+  const _GlintButton({Key? key, required this.onPressed, required this.label}) : super(key: key);
 
   @override
   _GlintButtonState createState() => _GlintButtonState();
@@ -121,6 +190,7 @@ class _GlintButtonState extends State<_GlintButton> with SingleTickerProviderSta
   late AnimationController _controller;
   late Animation<double> _animation;
   Timer? _timer;
+  final Random _random = Random();
 
   @override
   void initState() {
@@ -135,10 +205,26 @@ class _GlintButtonState extends State<_GlintButton> with SingleTickerProviderSta
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
 
-    // Trigger glint effect every 8 seconds
-    _timer = Timer.periodic(Duration(seconds: 8), (timer) {
-      _controller.forward(from: 0);
+    _startRandomGlintLoop();
+  }
+
+  void _startRandomGlintLoop() {
+    // Wait a random time before starting the first glint (0-5 seconds)
+    Future.delayed(Duration(milliseconds: _random.nextInt(5000)), () {
+      _triggerGlint();
+
+      // Then start a periodic timer with slight randomness (e.g. every 6–10 sec)
+      _timer = Timer.periodic(
+        Duration(seconds: 6 + _random.nextInt(5)),
+        (_) => _triggerGlint(),
+      );
     });
+  }
+
+  void _triggerGlint() {
+    if (mounted) {
+      _controller.forward(from: 0);
+    }
   }
 
   @override
@@ -151,71 +237,73 @@ class _GlintButtonState extends State<_GlintButton> with SingleTickerProviderSta
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: widget.onPressed, // Ensure tap is handled
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Button with border and theme styling
-          ElevatedButton(
-            onPressed: widget.onPressed,
-            style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: Theme.of(context).colorScheme.onPrimary, // Border
-                  width: 2,
-                ),
-              ),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-            ),
-            child: Text(
-              "Initiative Tracker",
-              style: TextStyle(
-                fontFamily: 'AlmendraSC',
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onPrimary,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ),
-
-          // Diagonal Glint Effect
-          Positioned.fill(
-            child: AnimatedBuilder(
-              animation: _animation,
-              builder: (context, child) {
-                return ShaderMask(
-                  shaderCallback: (bounds) {
-                    return LinearGradient(
-                      begin: Alignment.bottomLeft,  // Starts from bottom-left
-                      end: Alignment.topRight,    // Moves to top-right
-                      stops: [
-                        _animation.value - 0.3,
-                        _animation.value,
-                        _animation.value + 0.3,
-                      ],
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.9), // Stronger highlight
-                        Colors.transparent,
-                      ],
-                    ).createShader(bounds);
-                  },
-                  blendMode: BlendMode.srcATop,
-                  child: child,
-                );
-              },
-              child: Container(
-                decoration: BoxDecoration(
+      onTap: widget.onPressed,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minWidth: double.infinity),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: widget.onPressed,
+              style: ElevatedButton.styleFrom(
+                minimumSize: Size.fromHeight(48), // Ensures consistent height
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  color: Colors.white.withOpacity(0.15), // Subtle glow effect
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    width: 2,
+                  ),
+                ),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+              ),
+              child: Text(
+                widget.label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'AlmendraSC',
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  letterSpacing: 1.2,
                 ),
               ),
             ),
-          ),
-        ],
+            Positioned.fill(
+              child: AnimatedBuilder(
+                animation: _animation,
+                builder: (context, child) {
+                  return ShaderMask(
+                    shaderCallback: (bounds) {
+                      return LinearGradient(
+                        begin: Alignment.bottomLeft,
+                        end: Alignment.topRight,
+                        stops: [
+                          _animation.value - 0.3,
+                          _animation.value,
+                          _animation.value + 0.3,
+                        ],
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.9),
+                          Colors.transparent,
+                        ],
+                      ).createShader(bounds);
+                    },
+                    blendMode: BlendMode.srcATop,
+                    child: child,
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withOpacity(0.15),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

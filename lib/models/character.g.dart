@@ -18,16 +18,18 @@ class CharacterAdapter extends TypeAdapter<Character> {
     };
     return Character(
       name: fields[0] as String,
-      initiative: fields[1] as int,
+      initiative: fields[1] as int?,
       currentHp: fields[2] as int,
       maxHp: fields[3] as int,
+      armorClass: fields[4] as int?,
+      actions: (fields[5] as List?)?.cast<String>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Character obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.name)
       ..writeByte(1)
@@ -35,7 +37,11 @@ class CharacterAdapter extends TypeAdapter<Character> {
       ..writeByte(2)
       ..write(obj.currentHp)
       ..writeByte(3)
-      ..write(obj.maxHp);
+      ..write(obj.maxHp)
+      ..writeByte(4)
+      ..write(obj.armorClass)
+      ..writeByte(5)
+      ..write(obj.actions);
   }
 
   @override

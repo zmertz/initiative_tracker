@@ -1,4 +1,3 @@
-// lib/models/character.dart
 import 'package:hive/hive.dart';
 
 part 'character.g.dart';
@@ -9,7 +8,7 @@ class Character {
   String name;
 
   @HiveField(1)
-  int initiative;
+  int? initiative;
 
   @HiveField(2)
   int currentHp;
@@ -25,10 +24,28 @@ class Character {
 
   Character({
     required this.name,
-    required this.initiative,
+    this.initiative,
     required this.currentHp,
     required this.maxHp,
     this.armorClass,
     this.actions,
   });
+
+  Character copyWith({
+    String? name,
+    int? initiative,
+    int? currentHp,
+    int? maxHp,
+    int? armorClass,
+    List<String>? actions,
+  }) {
+    return Character(
+      name: name ?? this.name,
+      initiative: initiative ?? this.initiative,
+      currentHp: currentHp ?? this.currentHp,
+      maxHp: maxHp ?? this.maxHp,
+      armorClass: armorClass ?? this.armorClass,
+      actions: actions ?? List.from(this.actions ?? []),
+    );
+  }
 }

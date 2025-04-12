@@ -56,16 +56,22 @@ class _CharacterTileState extends State<CharacterTile> {
     );
   }
 
-  // Builds the circular avatar with index number
+  // Builds the circular avatar with initiative number
   Widget _buildLeadingAvatar(ThemeData theme) {
     return CircleAvatar(
-      backgroundColor: widget.isActive ? theme.colorScheme.primary.withOpacity(0.8) : theme.colorScheme.secondary,
+      backgroundColor: widget.isActive
+          ? theme.colorScheme.primary.withOpacity(0.8)
+          : theme.colorScheme.secondary,
       child: Text(
-        '${widget.index + 1}',
-        style: TextStyle(color: theme.colorScheme.onPrimary, fontWeight: FontWeight.bold),
+        '${widget.character.initiative ?? '-'}', // Show initiative or a dash if null
+        style: TextStyle(
+          color: theme.colorScheme.onPrimary,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
+
 
   // Builds the character name text styling
   Widget _buildTitleText(ThemeData theme) {
@@ -84,10 +90,6 @@ class _CharacterTileState extends State<CharacterTile> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          'Initiative: ${widget.character.initiative}',
-          style: TextStyle(color: widget.isActive ? Colors.white : theme.textTheme.bodyMedium?.color),
-        ),
         Text(
           'HP: ${widget.character.currentHp}/${widget.character.maxHp}',
           style: TextStyle(color: widget.isActive ? Colors.white : theme.textTheme.bodyMedium?.color),

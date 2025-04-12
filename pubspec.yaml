@@ -72,6 +72,10 @@ flutter:
     - assets/icons/heal.png
     - assets/icons/sword.png
     - assets/images/castle_background.png
+    - assets/images/dragon-castle-simple.jpg
+    - assets/images/dragon-castle.jpg
+    - assets/images/dragon-castle-realistic.jpg
+    - assets/images/template_images/placeholder.png
   
   fonts:
     - family: Sofia

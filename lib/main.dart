@@ -12,6 +12,7 @@ void main() async {
   await Hive.openBox<Character>('characters');
   await Hive.openBox('settings'); // For storing user settings like theme
   await Hive.openBox('encounterBox'); // For storing encounter data
+  await Hive.openBox('characterTemplatesBox'); // For character template data
 
   runApp(MyApp());
 }
