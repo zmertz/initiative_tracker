@@ -5,12 +5,14 @@ class EditCharacterForm extends StatefulWidget {
   final Character character;
   final Function(Character) onSave;
   final Function() onCancel;
+  final bool isTemplateScreen;
 
   const EditCharacterForm({
     Key? key,
     required this.character,
     required this.onSave,
     required this.onCancel,
+    this.isTemplateScreen = false,
   }) : super(key: key);
 
   @override
@@ -32,7 +34,7 @@ class _EditCharacterFormState extends State<EditCharacterForm> {
     initiativeController = TextEditingController(text: widget.character.initiative.toString());
     maxHpController = TextEditingController(text: widget.character.maxHp.toString());
     currentHpController = TextEditingController(text: widget.character.currentHp.toString());
-    armorClassController = TextEditingController(text: widget.character.armorClass?.toString() ?? ''); // Armor class initialization
+    armorClassController = TextEditingController(text: widget.character.armorClass?.toString() ?? '');
     actionControllers = widget.character.actions?.map((action) => TextEditingController(text: action)).toList() ?? [];
   }
 
@@ -50,13 +52,20 @@ class _EditCharacterFormState extends State<EditCharacterForm> {
 
   void saveCharacter() {
     final String newName = nameController.text.trim();
-    final int? newInitiative = int.tryParse(initiativeController.text.trim());
+    int? newInitiative = int.tryParse(initiativeController.text.trim());
     final int? newMaxHp = int.tryParse(maxHpController.text.trim());
-    final int? newCurrentHp = int.tryParse(currentHpController.text.trim());
+    int? newCurrentHp = int.tryParse(currentHpController.text.trim());
     final String newArmorClass = armorClassController.text.trim();
     final int? newArmorClassValue = newArmorClass.isNotEmpty ? int.tryParse(newArmorClass) : null;
 
-    if (newName.isEmpty || newInitiative == null || newMaxHp == null || newCurrentHp == null) {
+    if (newInitiative == null) {
+      newInitiative = 0;
+    }
+    if (newCurrentHp == null) {
+      newCurrentHp = newMaxHp;
+    }
+
+    if (newName.isEmpty || newMaxHp == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Please enter valid values for all fields.'),
@@ -69,12 +78,12 @@ class _EditCharacterFormState extends State<EditCharacterForm> {
       name: newName,
       initiative: newInitiative,
       maxHp: newMaxHp,
-      currentHp: newCurrentHp,
-      armorClass: newArmorClassValue, // Updated armor class
+      currentHp: newCurrentHp!, // ! asserts that it's not null - needed for int? -> int
+      armorClass: newArmorClassValue,
       actions: actionControllers
           .map((controller) => controller.text.trim())
           .where((action) => action.isNotEmpty)
-          .toList(), // Updated actions list
+          .toList(),
     );
 
     widget.onSave(updatedCharacter);
@@ -123,15 +132,18 @@ class _EditCharacterFormState extends State<EditCharacterForm> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Initiative Field
-                      TextFormField(
-                        controller: initiativeController,
-                        decoration: InputDecoration(
-                          labelText: 'Initiative',
-                          border: OutlineInputBorder(),
+                      if (!widget.isTemplateScreen) ...[
+                        // Initiative Field
+                        TextFormField(
+                          controller: initiativeController,
+                          decoration: InputDecoration(
+                            labelText: 'Initiative',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
                         ),
-                        keyboardType: TextInputType.number,
-                      ),
-                      SizedBox(height: 16),
+                        SizedBox(height: 16),
+                      ],
                       // Max HP Field
                       TextFormField(
                         controller: maxHpController,
@@ -143,14 +155,18 @@ class _EditCharacterFormState extends State<EditCharacterForm> {
                       ),
                       SizedBox(height: 16),
                       // Current HP Field
-                      TextFormField(
-                        controller: currentHpController,
-                        decoration: InputDecoration(
-                          labelText: 'Current HP',
-                          border: OutlineInputBorder(),
+                      if (!widget.isTemplateScreen) ...[
+                        // Current HP Field
+                        TextFormField(
+                          controller: currentHpController,
+                          decoration: InputDecoration(
+                            labelText: 'Current HP',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
                         ),
-                        keyboardType: TextInputType.number,
-                      ),
+                        SizedBox(height: 16),
+                      ]
                     ],
                   ),
                 ),
@@ -176,25 +192,28 @@ class _EditCharacterFormState extends State<EditCharacterForm> {
             // ListView of action fields
             Column(
               children: List.generate(actionControllers.length, (index) {
-                return Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: actionControllers[index],
-                        decoration: InputDecoration(
-                          labelText: 'Action ${index + 1}',
-                          border: OutlineInputBorder(),
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: actionControllers[index],
+                          decoration: InputDecoration(
+                            labelText: 'Action ${index + 1}',
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.multiline,
+                          maxLines: 10,
+                          minLines: 1,
                         ),
-                        keyboardType: TextInputType.multiline, // Allow multiline input
-                        maxLines: 10, // Limit to 10 lines
-                        minLines: 1, // Start with 1 line
                       ),
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.remove_circle, color: Colors.red),
-                      onPressed: () => removeActionField(index),
-                    ),
-                  ],
+                      IconButton(
+                        icon: Icon(Icons.remove_circle, color: Colors.red),
+                        onPressed: () => removeActionField(index),
+                      ),
+                    ],
+                  ),
                 );
               }),
             ),

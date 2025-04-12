@@ -3,12 +3,14 @@ import '../models/character.dart';
 
 class AddCharacterForm extends StatefulWidget {
   final Function(Character) onAdd;
-  final VoidCallback onCancel; // Callback for cancel action
+  final VoidCallback onCancel;
+  final bool isTemplateScreen; // NEW
 
   const AddCharacterForm({
     Key? key,
     required this.onAdd,
     required this.onCancel,
+    this.isTemplateScreen = false, // NEW: defaults to false
   }) : super(key: key);
 
   @override
@@ -18,65 +20,58 @@ class AddCharacterForm extends StatefulWidget {
 class _AddCharacterFormState extends State<AddCharacterForm> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController initiativeController = TextEditingController();
-  final TextEditingController hpController = TextEditingController(); // Single HP field
-  final TextEditingController armorClassController = TextEditingController(); // Armor Class field
-
-  // To hold the list of actions
+  final TextEditingController hpController = TextEditingController();
+  final TextEditingController armorClassController = TextEditingController();
   List<TextEditingController> actionControllers = [];
 
   void addCharacter() {
     final String name = nameController.text.trim();
-    final int? initiativeValue =
-        int.tryParse(initiativeController.text.trim());
     final int? hpValue = int.tryParse(hpController.text.trim());
-    final String armorClassText = armorClassController.text.trim();
-    final int? armorClassValue = armorClassText.isNotEmpty
-        ? int.tryParse(armorClassText)
+    final int? initiativeValue = widget.isTemplateScreen
+        ? null
+        : int.tryParse(initiativeController.text.trim());
+    final int? armorClassValue = armorClassController.text.trim().isNotEmpty
+        ? int.tryParse(armorClassController.text.trim())
         : null;
 
-    if (name.isEmpty || initiativeValue == null || hpValue == null) {
+    if (name.isEmpty || hpValue == null || (!widget.isTemplateScreen && initiativeValue == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please enter a valid name, initiative, and HP.'),
+          content: Text('Please enter a valid name, HP, and initiative.'),
         ),
       );
       return;
     }
 
-    // Collect all actions from the controllers
     List<String> actions = actionControllers
         .map((controller) => controller.text.trim())
         .where((action) => action.isNotEmpty)
         .toList();
 
-    // When a new character is added, current HP equals max HP.
     final newCharacter = Character(
       name: name,
-      initiative: initiativeValue,
+      initiative: initiativeValue ?? 0,
       maxHp: hpValue,
       currentHp: hpValue,
-      armorClass: armorClassValue, // Add armor class to the character
-      actions: actions, // Add actions to the character
+      armorClass: armorClassValue,
+      actions: actions,
     );
     widget.onAdd(newCharacter);
 
-    // Clear all fields after adding.
+    // Clear fields
     nameController.clear();
     initiativeController.clear();
     hpController.clear();
-    armorClassController.clear(); // Clear armor class
-    // Clear actions
+    armorClassController.clear();
     actionControllers.forEach((controller) => controller.clear());
   }
 
-  // Function to add a new action field
   void addActionField() {
     setState(() {
       actionControllers.add(TextEditingController());
     });
   }
 
-  // Function to remove an action field
   void removeActionField(int index) {
     setState(() {
       actionControllers.removeAt(index);
@@ -88,15 +83,14 @@ class _AddCharacterFormState extends State<AddCharacterForm> {
     nameController.dispose();
     initiativeController.dispose();
     hpController.dispose();
-    armorClassController.dispose(); // Dispose armor class controller
-    // Dispose action controllers
+    armorClassController.dispose();
     actionControllers.forEach((controller) => controller.dispose());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView( // Make the entire form scrollable
+    return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -108,7 +102,6 @@ class _AddCharacterFormState extends State<AddCharacterForm> {
             ),
             SizedBox(height: 16),
 
-            // Character Name Field
             TextField(
               controller: nameController,
               decoration: InputDecoration(
@@ -118,7 +111,6 @@ class _AddCharacterFormState extends State<AddCharacterForm> {
             ),
             SizedBox(height: 16),
 
-            // HP Field
             TextField(
               controller: hpController,
               decoration: InputDecoration(
@@ -129,18 +121,18 @@ class _AddCharacterFormState extends State<AddCharacterForm> {
             ),
             SizedBox(height: 16),
 
-            // Initiative Field
-            TextField(
-              controller: initiativeController,
-              decoration: InputDecoration(
-                labelText: 'Initiative',
-                border: OutlineInputBorder(),
+            if (!widget.isTemplateScreen) ...[
+              TextField(
+                controller: initiativeController,
+                decoration: InputDecoration(
+                  labelText: 'Initiative',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
               ),
-              keyboardType: TextInputType.number,
-            ),
-            SizedBox(height: 16),
+              SizedBox(height: 16),
+            ],
 
-            // Armor Class Field (Optional)
             TextField(
               controller: armorClassController,
               decoration: InputDecoration(
@@ -151,13 +143,12 @@ class _AddCharacterFormState extends State<AddCharacterForm> {
             ),
             SizedBox(height: 24),
 
-            // Optional Action Fields Section
             Text(
               "Actions (Optional)",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             SizedBox(height: 8),
-            // ListView of action fields
+
             Column(
               children: List.generate(actionControllers.length, (index) {
                 return Row(
@@ -169,11 +160,10 @@ class _AddCharacterFormState extends State<AddCharacterForm> {
                           labelText: 'Action ${index + 1}',
                           border: OutlineInputBorder(),
                         ),
-                        keyboardType: TextInputType.multiline, // Allow multiline input
-                        maxLines: 10, // Allow up to 10 lines
-                        minLines: 1, // Start with 1 line
-                        // Use a scrollable area after 10 lines
-                        scrollPadding: EdgeInsets.all(20), // Adds padding for scrolling
+                        keyboardType: TextInputType.multiline,
+                        maxLines: 10,
+                        minLines: 1,
+                        scrollPadding: EdgeInsets.all(20),
                       ),
                     ),
                     IconButton(
@@ -195,12 +185,11 @@ class _AddCharacterFormState extends State<AddCharacterForm> {
             ),
             SizedBox(height: 24),
 
-            // Buttons for Adding or Canceling
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 ElevatedButton(
-                  onPressed: widget.onCancel, // Handles the cancel action
+                  onPressed: widget.onCancel,
                   child: Text('Cancel'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey,
@@ -208,7 +197,7 @@ class _AddCharacterFormState extends State<AddCharacterForm> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: addCharacter, // Handles the add action
+                  onPressed: addCharacter,
                   child: Text('Add Character'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
@@ -223,3 +212,4 @@ class _AddCharacterFormState extends State<AddCharacterForm> {
     );
   }
 }
+
